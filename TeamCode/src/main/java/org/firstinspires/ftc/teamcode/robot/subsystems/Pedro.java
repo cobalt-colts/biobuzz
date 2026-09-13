@@ -7,7 +7,7 @@ import com.seattlesolvers.solverslib.command.CommandBase;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
 public class Pedro extends SubsystemBase {
-    public class FollowPath extends CommandBase {
+    public static class FollowPath extends CommandBase {
         private final Follower follower;
         private final Path path;
 
@@ -19,6 +19,11 @@ public class Pedro extends SubsystemBase {
         @Override
         public void initialize() {
             follower.follow(path);
+        }
+
+        @Override
+        public boolean isFinished() {
+            return !follower.isBusy();
         }
     }
 }
