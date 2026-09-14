@@ -94,31 +94,31 @@ public class ForesightTuner extends Procedure {
         result("brake kV", brake);
 
         code(Language.JAVA,
-        "public static ForesightConfig foresightConfig = new ForesightConfig(\n" +
-                "            c -> {\n" +
-                "                Controller primaryTranslationalForward = Controller.proportional("+forwardTranslationalPrimary+");\n" +
-                "                Controller secondaryTranslationalForward = Controller.proportional("+forwardTranslationalSecondary+");\n" +
-                "                Controller primaryTranslationalLateral = Controller.proportional("+strafeTranslationalPrimary+");\n" +
-                "                Controller secondaryTranslationalLateral = Controller.proportional("+strafeTranslationalSecondary+");\n" +
-                "\n" +
-                "                c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));\n" +
-                "                c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));\n" +
-                "\n" +
-                "                c.coast.set(Controller.proportionalFeedforward("+coast+"));\n" +
-                "                c.brake.set(Controller.proportionalFeedforward("+brake+"));\n" +
-                "\n" +
-                "                c.headingFeedback.set(Controller.proportional("+heading+"));\n" +
-                "                c.headingBrakeCoefficients.set(Vector2D.cartesian("+headingLinear+", "+headingQuadratic+"));\n" +
-                "\n" +
-                "                c.linearBrakeCoefficients.set(Matrix.diag("+forwardLinear+", "+strafeLinear+"));\n" +
-                "                c.quadraticBrakeCoefficients.set(Matrix.diag("+forwardQuadratic+", "+strafeQuadratic+"));\n" +
-                "\n" +
-                "                c.maxAchievableForwardVelocity.set("+forwardVelocity+");\n" +
-                "                c.maxAchievableStrafeVelocity.set("+strafeVelocity+");\n" +
-                "                c.naturalForwardDeceleration.set("+forwardDeceleration+");\n" +
-                "                c.naturalStrafeDeceleration.set("+strafeDeceleration+");\n" +
-                "            }\n" +
-                "    );");
+                "public static ForesightConfig foresightConfig = new ForesightConfig(\n" +
+                        "            c -> {\n" +
+                        "                Controller primaryTranslationalForward = Controller.proportional("+forwardTranslationalPrimary+");\n" +
+                        "                Controller secondaryTranslationalForward = Controller.proportional("+forwardTranslationalSecondary+");\n" +
+                        "                Controller primaryTranslationalLateral = Controller.proportional("+strafeTranslationalPrimary+");\n" +
+                        "                Controller secondaryTranslationalLateral = Controller.proportional("+strafeTranslationalSecondary+");\n" +
+                        "\n" +
+                        "                c.forwardTranslational.set(Controller.piecewise(secondaryTranslationalForward).put(2.5, primaryTranslationalForward));\n" +
+                        "                c.strafeTranslational.set(Controller.piecewise(secondaryTranslationalLateral).put(2.5, primaryTranslationalLateral));\n" +
+                        "\n" +
+                        "                c.coast.set(Controller.proportionalFeedforward("+coast+"));\n" +
+                        "                c.brake.set(Controller.proportionalFeedforward("+brake+"));\n" +
+                        "\n" +
+                        "                c.headingFeedback.set(Controller.proportional("+heading+"));\n" +
+                        "                c.headingBrakeCoefficients.set(Vector2D.cartesian("+headingLinear+", "+headingQuadratic+"));\n" +
+                        "\n" +
+                        "                c.linearBrakeCoefficients.set(Matrix.diag("+forwardLinear+", "+strafeLinear+"));\n" +
+                        "                c.quadraticBrakeCoefficients.set(Matrix.diag("+forwardQuadratic+", "+strafeQuadratic+"));\n" +
+                        "\n" +
+                        "                c.maxAchievableForwardVelocity.set("+forwardVelocity+");\n" +
+                        "                c.maxAchievableStrafeVelocity.set("+strafeVelocity+");\n" +
+                        "                c.naturalForwardDeceleration.set("+forwardDeceleration+");\n" +
+                        "                c.naturalStrafeDeceleration.set("+strafeDeceleration+");\n" +
+                        "            }\n" +
+                        "    );");
     }
 }
 
@@ -137,7 +137,7 @@ class ForwardVelocity extends TuningOpMode<Double> {
     }
 
     @Override
-    protected Double runTuningOpMode() {
+    protected Double runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -152,7 +152,10 @@ class ForwardVelocity extends TuningOpMode<Double> {
             velocities.add(0.0);
         }
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
 
         while (!end) {
             localizer.update();
@@ -170,7 +173,7 @@ class ForwardVelocity extends TuningOpMode<Double> {
         drivetrain.stop();
         double average = 0;
         for (double velocity : velocities) {
-                average += velocity;
+            average += velocity;
         }
         average /= velocities.size();
         return average;
@@ -192,7 +195,7 @@ class StrafeVelocity extends TuningOpMode<Double> {
     }
 
     @Override
-    protected Double runTuningOpMode() {
+    protected Double runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -207,7 +210,10 @@ class StrafeVelocity extends TuningOpMode<Double> {
             velocities.add(0.0);
         }
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
 
         while (!end) {
             localizer.update();
@@ -252,7 +258,7 @@ class ForwardDeceleration extends TuningOpMode<Double> {
     }
 
     @Override
-    protected Double runTuningOpMode() {
+    protected Double runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -265,7 +271,10 @@ class ForwardDeceleration extends TuningOpMode<Double> {
         localizer.update();
 
         DrivePowers power = new DrivePowers(1, 0, 0);
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
 
         drivetrain.drive(power, false);
 
@@ -340,7 +349,7 @@ class StrafeDeceleration extends TuningOpMode<Double> {
     }
 
     @Override
-    protected Double runTuningOpMode() {
+    protected Double runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -353,7 +362,10 @@ class StrafeDeceleration extends TuningOpMode<Double> {
         localizer.update();
 
         DrivePowers power = new DrivePowers(0, 1, 0);
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
 
         drivetrain.drive(power, false);
 
@@ -443,7 +455,7 @@ class HeadingBraking extends TuningOpMode<List<Double>> {
     }
 
     @Override
-    protected List<Double> runTuningOpMode() {
+    protected List<Double> runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -454,7 +466,10 @@ class HeadingBraking extends TuningOpMode<List<Double>> {
 
         POWERS = biasedGradient(trials, maxPower, minPower, bias);
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
         timer.reset();
 
         while (state != State.DONE && !isStopRequested()) {
@@ -577,7 +592,7 @@ class HeadingTuner extends TuningOpMode<Double> {
     }
 
     @Override
-    protected Double runTuningOpMode() {
+    protected Double runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -590,7 +605,10 @@ class HeadingTuner extends TuningOpMode<Double> {
         vMax = 0;
         lastTime = 0.0;
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
         timer.reset();
         lastTime = timer.seconds();
         drivetrain.drive(new DrivePowers(0.0, 0.0, POWER), false);
@@ -698,7 +716,7 @@ class ForwardBraking extends TuningOpMode<List<Double>> {
     }
 
     @Override
-    protected List<Double> runTuningOpMode() {
+    protected List<Double> runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -709,7 +727,10 @@ class ForwardBraking extends TuningOpMode<List<Double>> {
 
         List<Double> coefficients = Collections.emptyList();
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
         timer.reset();
 
         drivetrain.drive(new DrivePowers(maxPower,0,0), false);
@@ -863,7 +884,7 @@ class StrafeBraking extends TuningOpMode<List<Double>> {
     }
 
     @Override
-    protected List<Double> runTuningOpMode() {
+    protected List<Double> runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -874,7 +895,10 @@ class StrafeBraking extends TuningOpMode<List<Double>> {
 
         List<Double> coefficients = Collections.emptyList();
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
         timer.reset();
 
         drivetrain.drive(new DrivePowers(0,maxPower,0), false);
@@ -1019,7 +1043,7 @@ class ForwardTranslational extends TuningOpMode<List<Double>> {
     }
 
     @Override
-    protected List<Double> runTuningOpMode() {
+    protected List<Double> runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -1032,7 +1056,10 @@ class ForwardTranslational extends TuningOpMode<List<Double>> {
         vMax = 0;
         lastTime = 0.0;
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
         timer.reset();
         lastTime = timer.seconds();
         drivetrain.drive(new DrivePowers(POWER, 0.0, 0.0), false);
@@ -1134,7 +1161,7 @@ class StrafeTranslational extends TuningOpMode<List<Double>> {
     }
 
     @Override
-    protected List<Double> runTuningOpMode() {
+    protected List<Double> runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
         Drivetrain drivetrain = drivetrainFunction.apply(hardwareMap);
 
@@ -1147,7 +1174,10 @@ class StrafeTranslational extends TuningOpMode<List<Double>> {
         vMax = 0;
         lastTime = 0.0;
 
+        Thread.sleep(1000);
         waitForStart();
+        localizer.setPose(Pose.zero());
+        localizer.update();
         timer.reset();
         lastTime = timer.seconds();
         drivetrain.drive(new DrivePowers(0.0, POWER, 0.0), false);
@@ -1220,4 +1250,3 @@ class StrafeTranslational extends TuningOpMode<List<Double>> {
         this.tau = -1.0/linReg[1];
     }
 }
-

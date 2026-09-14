@@ -19,8 +19,10 @@ import java.util.regex.Pattern
 
 android {
 
-    compileSdkVersion 30
-
+    compileSdk 35
+    defaultConfig {
+        minSdk 24
+    }
     signingConfigs {
         release {
             def apkStoreFile = System.getenv("APK_SIGNING_STORE_FILE")
