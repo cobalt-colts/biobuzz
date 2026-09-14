@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.teleop;
 
 import com.pedropathing.follower.Follower;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.button.GamepadButton;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
@@ -23,6 +24,7 @@ public class RI3DTeleOp extends CommandOpMode {
 
         driverOp = new GamepadEx(gamepad1);
         follower = Constants.create(hardwareMap);
+        subsystems.pollenAcquisition.start();
 
         new GamepadButton(driverOp, GamepadKeys.Button.START)
                 .whenPressed(subsystems.drive.recalibratePinpoint(follower));
@@ -40,23 +42,49 @@ public class RI3DTeleOp extends CommandOpMode {
         new GamepadButton(driverOp, GamepadKeys.Button.LEFT_BUMPER)
                 .whenPressed(subsystems.intake.setIntakeMotorPow(-.5))
                 .whenReleased(subsystems.intake.setIntakeMotorPow(1));
+
+        Command acquirePollen = subsystems.pollenAcquisition.acquire(follower)
+                .alongWith(
+                        subsystems.intake.setIntakeServoPos(.45),
+                        subsystems.intake.setIntakeMotorPow(1)
+                );
+
+        new GamepadButton(driverOp, GamepadKeys.Button.X)
+                .whenHeld(acquirePollen);
     }
 
     @Override
     public void run() {
-        subsystems.drive.driveFieldCentric(
-                driverOp.getLeftY(),
-                -driverOp.getLeftX(),
-                -driverOp.getRightX(),
-                follower
-        );
-        follower.update();
         super.run();
+
+        if (!subsystems.pollenAcquisition.isActive()) {
+            subsystems.drive.driveFieldCentric(
+                    driverOp.getLeftY(),
+                    -driverOp.getLeftX(),
+                    -driverOp.getRightX(),
+                    follower
+            );
+        }
+
+        follower.update();
+
+        telemetry.addData("Pollen assist", subsystems.pollenAcquisition.isActive());
+        telemetry.addData("Pollen target", subsystems.pollenAcquisition.hasTarget());
+        telemetry.addData("Pollen entry", "%.2f, %.2f",
+                subsystems.pollenAcquisition.getEntryX(),
+                subsystems.pollenAcquisition.getEntryY());
+        telemetry.update();
     }
 
     @Override
     public void preRun() {
         subsystems.intake.setIntakeServoPos(.45).schedule();
         subsystems.intake.setIntakeMotorPow(1).schedule();
+    }
+
+    @Override
+    public void end() {
+        subsystems.pollenAcquisition.stop();
+        follower.stop();
     }
 }

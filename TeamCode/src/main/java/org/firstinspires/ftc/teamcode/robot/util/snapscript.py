@@ -787,9 +787,13 @@ def runPipeline(image, llrobot):
     # 5 = entry blob X
     # 6 = entry blob Y
     # 7 = nearby avoided-color blobs
+    # 8 = normalized entry blob X (0 = left, 1 = right)
+    # 9 = normalized entry blob Y (0 = top, 1 = bottom)
     # --------------------------------------------------------
 
     llpython = [
+        0,
+        0,
         0,
         0,
         0,
@@ -1174,7 +1178,17 @@ def runPipeline(image, llrobot):
             # nearby opponent blobs
             target[
                 "nearby_avoided"
-            ]
+            ],
+
+            # resolution-independent entry X
+            entry[
+                "cx"
+            ] / float(max(1, w_img)),
+
+            # resolution-independent entry Y
+            entry[
+                "cy"
+            ] / float(max(1, h_img))
         ]
 
 
