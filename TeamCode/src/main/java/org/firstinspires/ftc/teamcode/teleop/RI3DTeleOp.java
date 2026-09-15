@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.button.GamepadButton;
+import com.seattlesolvers.solverslib.command.button.Trigger;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
@@ -34,14 +35,18 @@ public class RI3DTeleOp extends CommandOpMode {
                 .whenReleased(subsystems.flowerkicker.setKickerPos(.85));
 
         new GamepadButton(driverOp, GamepadKeys.Button.DPAD_UP)
-                .whenPressed(subsystems.intake.setIntakeServoPos(.8));
+                .whenPressed(subsystems.intake.setIntakeServoPos(.7));
 
         new GamepadButton(driverOp, GamepadKeys.Button.DPAD_DOWN)
-                .whenPressed(subsystems.intake.setIntakeServoPos(.45));
+                .whenPressed(subsystems.intake.setIntakeServoPos(.485));
 
         new GamepadButton(driverOp, GamepadKeys.Button.LEFT_BUMPER)
                 .whenPressed(subsystems.intake.setIntakeMotorPow(-.5))
                 .whenReleased(subsystems.intake.setIntakeMotorPow(1));
+
+        new Trigger(() -> driverOp.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5)
+                .whenActive(subsystems.transfer.setTransferServoPower(1))
+                .whenInactive(subsystems.transfer.setTransferServoPower(0));
 
         Command acquirePollen = subsystems.pollenAcquisition.acquire(follower)
                 .alongWith(
@@ -78,7 +83,7 @@ public class RI3DTeleOp extends CommandOpMode {
 
     @Override
     public void preRun() {
-        subsystems.intake.setIntakeServoPos(.45).schedule();
+        subsystems.intake.setIntakeServoPos(.485).schedule();
         subsystems.intake.setIntakeMotorPow(1).schedule();
     }
 

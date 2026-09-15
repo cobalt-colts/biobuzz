@@ -21,7 +21,7 @@ public class Intake extends SubsystemBase {
         leftIntake = new ServoEx(hardwareMap, "leftIntake");
         rightIntake = new ServoEx(hardwareMap, "rightIntake");
         intakeServoGroup = new ServoExGroup(leftIntake, rightIntake);
-        rightIntake.setInverted(true);
+        leftIntake.setInverted(true);
 
         intakeServoGroup.set(.8);
         intake.set(0);

@@ -16,6 +16,8 @@ public class Subsystems {
     public Intake intake;
     public FlowerKicker flowerkicker;
     public PollenAcquisition pollenAcquisition;
+    public Shooter shooter;
+    public Transfer transfer;
     public OpModeTypes opmodetype;
 
     public Subsystems (HardwareMap hardwareMap, OpModeTypes opmodetype) {
@@ -24,6 +26,8 @@ public class Subsystems {
         this.flowerkicker = new FlowerKicker(hardwareMap);
         this.pollenAcquisition = new PollenAcquisition(hardwareMap);
         this.pedro = new Pedro();
+        this.shooter = new Shooter(hardwareMap);
+        this.transfer = new Transfer(hardwareMap);
         this.opmodetype = opmodetype;
     }
 }
