@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.robot;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.subsystems.*;
 
 
@@ -20,13 +21,13 @@ public class Subsystems {
     public Transfer transfer;
     public OpModeTypes opmodetype;
 
-    public Subsystems (HardwareMap hardwareMap, OpModeTypes opmodetype) {
+    public Subsystems (HardwareMap hardwareMap, OpModeTypes opmodetype, Telemetry telemetry) {
         this.drive = new Drive();
         this.intake = new Intake(hardwareMap);
         this.flowerkicker = new FlowerKicker(hardwareMap);
         this.pollenAcquisition = new PollenAcquisition(hardwareMap);
         this.pedro = new Pedro();
-        this.shooter = new Shooter(hardwareMap);
+        this.shooter = new Shooter(hardwareMap, telemetry);
         this.transfer = new Transfer(hardwareMap);
         this.opmodetype = opmodetype;
     }

@@ -21,7 +21,7 @@ public class RI3DTeleOp extends CommandOpMode {
     @Override
     public void initialize() {
         super.reset();
-        subsystems = new Subsystems(hardwareMap, Subsystems.OpModeTypes.TELEOP);
+        subsystems = new Subsystems(hardwareMap, Subsystems.OpModeTypes.TELEOP, telemetry);
 
         driverOp = new GamepadEx(gamepad1);
         follower = Constants.create(hardwareMap);
