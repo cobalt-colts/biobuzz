@@ -13,7 +13,6 @@ public class Subsystems {
     }
 
     public Drive drive;
-    public Pedro pedro;
     public Intake intake;
     public FlowerKicker flowerkicker;
     public PollenAcquisition pollenAcquisition;
@@ -26,7 +25,6 @@ public class Subsystems {
         this.intake = new Intake(hardwareMap);
         this.flowerkicker = new FlowerKicker(hardwareMap);
         this.pollenAcquisition = new PollenAcquisition(hardwareMap);
-        this.pedro = new Pedro();
         this.shooter = new Shooter(hardwareMap, telemetry);
         this.transfer = new Transfer(hardwareMap);
         this.opmodetype = opmodetype;
