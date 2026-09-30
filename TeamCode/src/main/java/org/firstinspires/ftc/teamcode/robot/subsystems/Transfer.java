@@ -23,7 +23,7 @@ public class Transfer extends SubsystemBase {
         transfer2.setInverted(true);
         transferservos = new CRServoGroup(transfer1, transfer2);
 
-        kicker = new ServoEx(hardwareMap, "kicker");
+//        kicker = new ServoEx(hardwareMap, "kicker");
     }
 
     public Command setTransferServoPower(double pow) {

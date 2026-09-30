@@ -30,11 +30,11 @@ public class RI3DTeleOp extends CommandOpMode {
         new GamepadButton(driverOp, GamepadKeys.Button.START)
                 .whenPressed(subsystems.drive.recalibratePinpoint(follower));
 
-        new GamepadButton(driverOp, GamepadKeys.Button.RIGHT_BUMPER)
-                .whenPressed(subsystems.flowerkicker.setKickerPos(.3))
-                .whenReleased(subsystems.flowerkicker.setKickerPos(.85));
+//        new GamepadButton(driverOp, GamepadKeys.Button.RIGHT_BUMPER)
+//                .whenPressed(subsystems.flowerkicker.setKickerPos(.3))
+//                .whenReleased(subsystems.flowerkicker.setKickerPos(.85));
 
-        new GamepadButton(driverOp, GamepadKeys.Button.DPAD_UP)
+        /*new GamepadButton(driverOp, GamepadKeys.Button.DPAD_UP)
                 .whenPressed(subsystems.intake.setIntakeServoPos(.7));
 
         new GamepadButton(driverOp, GamepadKeys.Button.DPAD_DOWN)
@@ -43,17 +43,18 @@ public class RI3DTeleOp extends CommandOpMode {
         new GamepadButton(driverOp, GamepadKeys.Button.LEFT_BUMPER)
                 .whenPressed(subsystems.intake.setIntakeMotorPow(-.5))
                 .whenReleased(subsystems.intake.setIntakeMotorPow(1));
-
+*/
         new Trigger(() -> driverOp.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5)
                 .whenActive(subsystems.transfer.setTransferServoPower(1))
                 .whenInactive(subsystems.transfer.setTransferServoPower(0));
 
         Command acquirePollen = subsystems.pollenAcquisition.acquire(follower)
-                .alongWith(
+                /*.alongWith(
                         subsystems.intake.setIntakeServoPos(.45),
                         subsystems.intake.setIntakeMotorPow(1)
-                );
+                );*/;
 
+        // Hold X to turn and approach the selected cluster; release to resume stick drive.
         new GamepadButton(driverOp, GamepadKeys.Button.X)
                 .whenHeld(acquirePollen);
     }
@@ -66,7 +67,8 @@ public class RI3DTeleOp extends CommandOpMode {
             subsystems.drive.driveFieldCentric(
                     driverOp.getLeftY(),
                     -driverOp.getLeftX(),
-                    -driverOp.getRightX(),
+                    driverOp.getRightX(),
+                    driverOp.getRightY(),
                     follower
             );
         }
@@ -75,16 +77,14 @@ public class RI3DTeleOp extends CommandOpMode {
 
         telemetry.addData("Pollen assist", subsystems.pollenAcquisition.isActive());
         telemetry.addData("Pollen target", subsystems.pollenAcquisition.hasTarget());
-        telemetry.addData("Pollen entry", "%.2f, %.2f",
-                subsystems.pollenAcquisition.getEntryX(),
-                subsystems.pollenAcquisition.getEntryY());
+        subsystems.pollenAcquisition.addTelemetry(telemetry);
         telemetry.update();
     }
 
     @Override
     public void preRun() {
-        subsystems.intake.setIntakeServoPos(.485).schedule();
-        subsystems.intake.setIntakeMotorPow(1).schedule();
+//        subsystems.intake.setIntakeServoPos(.485).schedule();
+//        subsystems.intake.setIntakeMotorPow(1).schedule();
     }
 
     @Override

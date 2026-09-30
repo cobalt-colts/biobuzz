@@ -9,14 +9,23 @@ import com.seattlesolvers.solverslib.command.CommandBase;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
 import org.firstinspires.ftc.teamcode.robot.util.Constants;
+import org.firstinspires.ftc.teamcode.robot.util.CameraGeometry;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+import java.util.Arrays;
 
 public final class PollenAcquisition extends SubsystemBase {
     private final Limelight3A limelight;
 
+    private CameraGeometry.Target intakeTarget;
+    private LLResult latestResult;
+    private double[] pythonOutput;
+    private String targetStatus = "Waiting for camera";
+    private boolean connected;
     private boolean active;
     private boolean hasTarget;
-    private double entryX;
-    private double entryY;
+    private double clusterX = Double.NaN;
+    private double clusterY = Double.NaN;
 
     public PollenAcquisition(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, Constants.LIMELIGHT_NAME);
@@ -40,12 +49,89 @@ public final class PollenAcquisition extends SubsystemBase {
         return hasTarget;
     }
 
-    public double getEntryX() {
-        return entryX;
+    public double getClusterX() {
+        return clusterX;
     }
 
-    public double getEntryY() {
-        return entryY;
+    public double getClusterY() {
+        return clusterY;
+    }
+
+    @Override
+    public void periodic() {
+        latestResult = limelight.getLatestResult();
+        connected = limelight.isConnected();
+        pythonOutput = latestResult == null ? null : latestResult.getPythonOutput();
+        hasTarget = false;
+        intakeTarget = null;
+        clusterX = Double.NaN;
+        clusterY = Double.NaN;
+
+        if (!connected) {
+            targetStatus = "Camera disconnected";
+        } else if (latestResult == null) {
+            targetStatus = "No result received";
+        } else if (latestResult.getPipelineIndex() != Constants.SNAPSCRIPT_PIPELINE_INDEX) {
+            targetStatus = "Wrong pipeline";
+        } else if (latestResult.getStaleness() > Constants.MAX_RESULT_AGE_MS) {
+            targetStatus = "Stale result";
+        } else if (pythonOutput == null || pythonOutput.length <= Constants.PYTHON_PROTOCOL_INDEX) {
+            targetStatus = "Missing Python output";
+        } else if (pythonOutput[Constants.PYTHON_PROTOCOL_INDEX] != Constants.PYTHON_PROTOCOL_ID) {
+            targetStatus = "Upload current SnapScript to pipeline 0";
+        } else if (!Double.isFinite(pythonOutput[Constants.CLUSTER_BLOB_COUNT_INDEX])
+                || pythonOutput[Constants.CLUSTER_BLOB_COUNT_INDEX] < 0) {
+            targetStatus = "Invalid blob count";
+        } else if (pythonOutput[Constants.CLUSTER_BLOB_COUNT_INDEX] == 0) {
+            targetStatus = "No cluster detected";
+        } else if (!isNormalized(pythonOutput[Constants.NORMALIZED_CLUSTER_X_INDEX])
+                || !isNormalized(pythonOutput[Constants.NORMALIZED_CLUSTER_Y_INDEX])) {
+            targetStatus = "Invalid cluster coordinates";
+        } else {
+            // Custom Python payload owns target validity; SDK isValid describes
+            // Limelight's standard contour target, not this payload's schema.
+            clusterX = pythonOutput[Constants.NORMALIZED_CLUSTER_X_INDEX];
+            clusterY = pythonOutput[Constants.NORMALIZED_CLUSTER_Y_INDEX];
+            hasTarget = true;
+            targetStatus = "Tracking cluster";
+            if (Constants.USE_PHYSICAL_CAMERA_OFFSETS) {
+                intakeTarget = CameraGeometry.project(clusterX, clusterY,
+                        Constants.CAMERA_HEIGHT_INCHES, Constants.POLLEN_CENTER_HEIGHT_INCHES,
+                        Constants.CAMERA_DOWN_PITCH_DEGREES,
+                        Constants.CAMERA_HORIZONTAL_FOV_DEGREES, Constants.CAMERA_VERTICAL_FOV_DEGREES,
+                        Constants.CAMERA_FORWARD_OF_INTAKE_INCHES, Constants.CAMERA_RIGHT_OF_INTAKE_INCHES);
+                hasTarget = intakeTarget != null
+                        && Double.isFinite(Constants.CLUSTER_STOP_DISTANCE_INCHES)
+                        && Double.isFinite(Constants.CLUSTER_SLOW_DISTANCE_INCHES)
+                        && Constants.CLUSTER_STOP_DISTANCE_INCHES >= 0
+                        && Constants.CLUSTER_SLOW_DISTANCE_INCHES > Constants.CLUSTER_STOP_DISTANCE_INCHES;
+                targetStatus = hasTarget ? "Tracking relative to intake"
+                        : "Invalid camera geometry / target ray / distance settings";
+            }
+        }
+    }
+
+    public void addTelemetry(Telemetry telemetry) {
+        telemetry.addData("Pollen status", targetStatus);
+        telemetry.addData("Pollen positioning", Constants.USE_PHYSICAL_CAMERA_OFFSETS
+                ? "Physical camera offsets" : "Image coordinates (camera offsets disabled)");
+        telemetry.addData("Camera lateral offset (in)", Constants.CAMERA_RIGHT_OF_INTAKE_INCHES);
+        if (intakeTarget != null) {
+            telemetry.addData("Cluster from intake (in)", "forward=%.1f right=%.1f",
+                    intakeTarget.forward, intakeTarget.right);
+        }
+        telemetry.addData("Limelight connected", connected);
+        if (latestResult != null) {
+            telemetry.addData("Limelight pipeline", "%d (%s)",
+                    latestResult.getPipelineIndex(), latestResult.getPipelineType());
+            telemetry.addData("Limelight age ms", latestResult.getStaleness());
+            telemetry.addData("Limelight contour valid", latestResult.isValid());
+        }
+        telemetry.addData("Limelight Python", pythonOutput == null ? "missing"
+                : Arrays.toString(Arrays.copyOf(pythonOutput, Math.min(8, pythonOutput.length))));
+        telemetry.addData("Pollen cluster", hasTarget
+                ? String.format(java.util.Locale.US, "%.2f, %.2f", clusterX, clusterY)
+                : "unavailable");
     }
 
     public Command acquire(Follower follower) {
@@ -57,57 +143,58 @@ public final class PollenAcquisition extends SubsystemBase {
             @Override
             public void initialize() {
                 active = true;
-                hasTarget = false;
-                entryX = Double.NaN;
-                entryY = Double.NaN;
+                follower.manual(0, 0, 0);
             }
 
             @Override
             public void execute() {
-                LLResult result = limelight.getLatestResult();
-                double[] output = result.getPythonOutput();
-
-                hasTarget = limelight.isConnected()
-                        && result.isValid()
-                        && result.getStaleness() <= Constants.MAX_RESULT_AGE_MS
-                        && output.length > Constants.NORMALIZED_ENTRY_Y_INDEX
-                        && output[Constants.CLUSTER_BLOB_COUNT_INDEX] > 0;
-
                 if (!hasTarget) {
-                    entryX = Double.NaN;
-                    entryY = Double.NaN;
                     follower.manual(0, 0, 0);
                     return;
                 }
 
-                entryX = output[Constants.NORMALIZED_ENTRY_X_INDEX];
-                entryY = output[Constants.NORMALIZED_ENTRY_Y_INDEX];
-
-                if (!isNormalized(entryX) || !isNormalized(entryY)
-                        || entryY >= Constants.ENTRY_Y_STOP) {
-                    follower.manual(0, 0, 0);
-                    return;
-                }
-
-                double xError = entryX - Constants.ENTRY_X_SETPOINT;
-                double strafe = Math.abs(xError) <= Constants.ENTRY_X_DEADBAND
+                double xError = intakeTarget == null ? clusterX - Constants.CLUSTER_X_SETPOINT
+                        : Math.atan2(intakeTarget.right, Math.max(0.01, intakeTarget.forward))
+                                / Math.toRadians(Constants.CAMERA_HORIZONTAL_FOV_DEGREES);
+                double turn = Math.abs(xError) <= Constants.CLUSTER_X_DEADBAND
                         ? 0
                         : clamp(
-                                xError * Constants.STRAFE_KP,
-                                -Constants.MAX_STRAFE_POWER,
-                                Constants.MAX_STRAFE_POWER
+                                Constants.TURN_DIRECTION * xError * Constants.TURN_KP,
+                                -Constants.MAX_TURN_POWER,
+                                Constants.MAX_TURN_POWER
                         );
 
-                follower.manual(Constants.APPROACH_POWER, strafe, 0);
+                // Reduce translation while turning toward the target.
+                double alignmentScale = clamp(
+                        (Constants.TURN_ONLY_ERROR - Math.abs(xError))
+                                / (Constants.TURN_ONLY_ERROR - Constants.CLUSTER_X_DEADBAND),
+                        0, 1);
+                double proximityScale = intakeTarget == null ? clamp(
+                        (Constants.CLUSTER_Y_STOP - clusterY)
+                                / (Constants.CLUSTER_Y_STOP - Constants.CLUSTER_Y_SLOW), 0, 1)
+                        : clamp((intakeTarget.forward - Constants.CLUSTER_STOP_DISTANCE_INCHES)
+                                / (Constants.CLUSTER_SLOW_DISTANCE_INCHES - Constants.CLUSTER_STOP_DISTANCE_INCHES), 0, 1);
+                boolean closeEnough = intakeTarget == null ? clusterY >= Constants.CLUSTER_Y_STOP
+                        : intakeTarget.forward <= Constants.CLUSTER_STOP_DISTANCE_INCHES;
+                // At the intake threshold, stop translation but finish aligning.
+                double forward = closeEnough ? 0
+                        : alignmentScale * (Constants.MIN_APPROACH_POWER
+                                + (Constants.APPROACH_POWER - Constants.MIN_APPROACH_POWER) * proximityScale);
+
+                // Robot-centric vision correction through Pedro's manual drive mode.
+                // Pedro positive strafe is left. Physical mode uses measured lateral
+                // error instead of adding the fixed right bias a second time.
+                double strafe = intakeTarget == null ? -forward * Constants.APPROACH_RIGHT_STRAFE_RATIO
+                        : (forward <= 0 ? 0 : -clamp(intakeTarget.right * Constants.INTAKE_STRAFE_KP,
+                                -Constants.MAX_INTAKE_STRAFE_POWER, Constants.MAX_INTAKE_STRAFE_POWER)
+                                * alignmentScale);
+                follower.manual(forward, strafe, turn);
             }
 
             @Override
             public void end(boolean interrupted) {
                 follower.stop();
                 active = false;
-                hasTarget = false;
-                entryX = Double.NaN;
-                entryY = Double.NaN;
             }
 
             @Override
@@ -118,9 +205,7 @@ public final class PollenAcquisition extends SubsystemBase {
     }
 
     private static boolean isNormalized(double value) {
-        // A real blob center cannot be exactly zero. Rejecting zero also makes an old
-        // eight-value SnapScript fail safe instead of being treated as a target.
-        return Double.isFinite(value) && value > 0 && value <= 1;
+        return Double.isFinite(value) && value >= 0 && value <= 1;
     }
 
     private static double clamp(double value, double min, double max) {

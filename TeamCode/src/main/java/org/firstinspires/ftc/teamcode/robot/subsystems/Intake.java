@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems;
+/*package org.firstinspires.ftc.teamcode.robot.subsystems;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.Command;
@@ -34,4 +34,4 @@ public class Intake extends SubsystemBase {
     public Command setIntakeMotorPow(double pow) {
         return new InstantCommand(() -> intake.set(pow));
     }
-}
+}*/

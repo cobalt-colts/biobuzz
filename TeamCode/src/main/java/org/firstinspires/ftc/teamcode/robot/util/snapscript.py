@@ -779,30 +779,16 @@ def runPipeline(image, llrobot):
     # --------------------------------------------------------
     # llpython
     #
+    # Eight-value wire format, shared with Constants.java.
     # 0 = total yellow blobs
-    # 1 = blobs in selected cluster
-    # 2 = cluster center X
-    # 3 = cluster center Y
-    # 4 = cluster approximate radius
-    # 5 = entry blob X
-    # 6 = entry blob Y
-    # 7 = nearby avoided-color blobs
-    # 8 = normalized entry blob X (0 = left, 1 = right)
-    # 9 = normalized entry blob Y (0 = top, 1 = bottom)
+    # 1 = blobs in selected cluster (0 means no target)
+    # 2, 3 = normalized cluster X, Y
+    # 4, 5 = normalized entry X, Y
+    # 6 = nearby avoided-color blobs
+    # 7 = protocol identifier (reject old scripts / padded output)
     # --------------------------------------------------------
 
-    llpython = [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-    ]
+    llpython = [0.0] * 7 + [260924.0]
 
 
     if (
@@ -1139,56 +1125,14 @@ def runPipeline(image, llrobot):
 
 
         llpython = [
-
-            # total visible yellow blobs
-            len(
-                yellow_blobs
-            ),
-
-            # blobs in target cluster
-            target[
-                "count"
-            ],
-
-            # target X
-            target[
-                "cx"
-            ],
-
-            # target Y
-            target[
-                "cy"
-            ],
-
-            # approximate target radius
-            target[
-                "radius"
-            ],
-
-            # entry X
-            entry[
-                "cx"
-            ],
-
-            # entry Y
-            entry[
-                "cy"
-            ],
-
-            # nearby opponent blobs
-            target[
-                "nearby_avoided"
-            ],
-
-            # resolution-independent entry X
-            entry[
-                "cx"
-            ] / float(max(1, w_img)),
-
-            # resolution-independent entry Y
-            entry[
-                "cy"
-            ] / float(max(1, h_img))
+            float(len(yellow_blobs)),
+            float(target["count"]),
+            float(target["cx"]) / max(1, w_img),
+            float(target["cy"]) / max(1, h_img),
+            float(entry["cx"]) / max(1, w_img),
+            float(entry["cy"]) / max(1, h_img),
+            float(target["nearby_avoided"]),
+            260924.0
         ]
 
 
