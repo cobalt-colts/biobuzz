@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.robot.subsystems;
 
-import com.pedropathing.controllers.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDController;
 import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.ManualDrive;
@@ -16,6 +16,10 @@ public final class Drive extends SubsystemBase {
     PIDController headingControl = new PIDController(.8,0,0);
 
     double lastCommandedHeading;
+
+    public Drive() {
+        headingControl.setTolerance(Math.toRadians(5));
+    }
 
     public Command recalibratePinpoint(Follower follower) {
         return new InstantCommand(() -> {
@@ -52,11 +56,6 @@ public final class Drive extends SubsystemBase {
         double pidSetpoint = currentHeading + headingError;
 
         double turnAmount = Math.clamp(headingControl.calculate(currentHeading, pidSetpoint), -1.0, 1.0);
-
-        if (Math.abs(Math.toDegrees(headingError)) < 5) {
-            turnAmount = 0;
-        } else {
-        }
 
         DrivePowers powers = ManualDrive.fieldCentric(
                 forward,
