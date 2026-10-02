@@ -25,7 +25,7 @@ public class Subsystems {
         //this.intake = new Intake(hardwareMap);
 //        this.flowerkicker = new FlowerKicker(hardwareMap);
         this.pollenAcquisition = new PollenAcquisition(hardwareMap);
-        this.shooter = new Shooter(hardwareMap, telemetry);
+//        this.shooter = new Shooter(hardwareMap, telemetry);
         this.transfer = new Transfer(hardwareMap);
         this.opmodetype = opmodetype;
     }

@@ -5,7 +5,6 @@ import com.pedropathing.drivetrain.DrivePowers;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.follower.ManualDrive;
 import com.pedropathing.math.Pose;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.InstantCommand;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
@@ -13,19 +12,18 @@ import com.seattlesolvers.solverslib.command.SubsystemBase;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 public final class Drive extends SubsystemBase {
-    PIDController headingControl = new PIDController(.8,0,0);
+    PIDController headingControl = new PIDController(1,0,0.075);
 
-    double lastCommandedHeading;
+    double lastCommandedHeading = Double.NaN;
 
     public Drive() {
-        headingControl.setTolerance(Math.toRadians(5));
+        headingControl.setTolerance(Math.toRadians(2));
     }
 
-    public Command recalibratePinpoint(Follower follower) {
+    public Command resetHeading(Follower follower) {
         return new InstantCommand(() -> {
-            follower.stop();
-            follower.localizer.reset();
-            follower.setPose(Pose.zero());
+            follower.setHeading(0);
+            lastCommandedHeading = Double.NaN;
         });
     }
     public void driveFieldCentric(

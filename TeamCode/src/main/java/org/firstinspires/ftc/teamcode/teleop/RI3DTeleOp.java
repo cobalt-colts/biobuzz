@@ -28,7 +28,7 @@ public class RI3DTeleOp extends CommandOpMode {
         subsystems.pollenAcquisition.start();
 
         new GamepadButton(driverOp, GamepadKeys.Button.START)
-                .whenPressed(subsystems.drive.recalibratePinpoint(follower));
+                .whenPressed(subsystems.drive.resetHeading(follower));
 
 //        new GamepadButton(driverOp, GamepadKeys.Button.RIGHT_BUMPER)
 //                .whenPressed(subsystems.flowerkicker.setKickerPos(.3))
@@ -67,8 +67,8 @@ public class RI3DTeleOp extends CommandOpMode {
             subsystems.drive.driveFieldCentric(
                     driverOp.getLeftY(),
                     -driverOp.getLeftX(),
-                    driverOp.getRightX(),
-                    driverOp.getRightY(),
+                    -driverOp.getRightX(),
+                    -driverOp.getRightY(),
                     follower
             );
         }
@@ -85,6 +85,7 @@ public class RI3DTeleOp extends CommandOpMode {
     public void preRun() {
 //        subsystems.intake.setIntakeServoPos(.485).schedule();
 //        subsystems.intake.setIntakeMotorPow(1).schedule();
+        follower.localizer.reset();
     }
 
     @Override
