@@ -26,6 +26,10 @@ public final class PollenAcquisition extends SubsystemBase {
     private boolean hasTarget;
     private double clusterX = Double.NaN;
     private double clusterY = Double.NaN;
+    private double latencySeconds;
+    private double lastXError = Double.NaN;
+    private double lastTurn;
+    private double lastStrafe;
 
     public PollenAcquisition(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, Constants.LIMELIGHT_NAME);
@@ -66,6 +70,7 @@ public final class PollenAcquisition extends SubsystemBase {
         intakeTarget = null;
         clusterX = Double.NaN;
         clusterY = Double.NaN;
+        latencySeconds = 0;
 
         if (!connected) {
             targetStatus = "Camera disconnected";
@@ -93,6 +98,8 @@ public final class PollenAcquisition extends SubsystemBase {
             clusterX = pythonOutput[Constants.NORMALIZED_CLUSTER_X_INDEX];
             clusterY = pythonOutput[Constants.NORMALIZED_CLUSTER_Y_INDEX];
             hasTarget = true;
+            latencySeconds = clamp((latestResult.getCaptureLatency() + latestResult.getTargetingLatency()
+                    + latestResult.getStaleness()) / 1000.0, 0, Constants.MAX_LATENCY_COMPENSATION_S);
             targetStatus = "Tracking cluster";
             if (Constants.USE_PHYSICAL_CAMERA_OFFSETS) {
                 intakeTarget = CameraGeometry.project(clusterX, clusterY,
@@ -129,6 +136,8 @@ public final class PollenAcquisition extends SubsystemBase {
         }
         telemetry.addData("Limelight Python", pythonOutput == null ? "missing"
                 : Arrays.toString(Arrays.copyOf(pythonOutput, Math.min(8, pythonOutput.length))));
+        telemetry.addData("Pollen control", "xErr=%.3f turn=%.2f strafe=%.2f latency=%.0fms",
+                lastXError, lastTurn, lastStrafe, latencySeconds * 1000);
         telemetry.addData("Pollen cluster", hasTarget
                 ? String.format(java.util.Locale.US, "%.2f, %.2f", clusterX, clusterY)
                 : "unavailable");
@@ -149,20 +158,29 @@ public final class PollenAcquisition extends SubsystemBase {
             @Override
             public void execute() {
                 if (!hasTarget) {
+                    lastXError = Double.NaN;
+                    lastTurn = 0;
+                    lastStrafe = 0;
                     follower.manual(0, 0, 0);
                     return;
                 }
 
+                double fovRadians = Math.toRadians(Constants.CAMERA_HORIZONTAL_FOV_DEGREES);
+                double omega = follower.velocity().omega;
+
+                // Intake-relative bearing. Flooring the forward distance keeps the
+                // effective gain from exploding as the cluster nears the intake, where
+                // a small lateral offset would otherwise read as a huge angle.
                 double xError = intakeTarget == null ? clusterX - Constants.CLUSTER_X_SETPOINT
-                        : Math.atan2(intakeTarget.right, Math.max(0.01, intakeTarget.forward))
-                                / Math.toRadians(Constants.CAMERA_HORIZONTAL_FOV_DEGREES);
-                double turn = Math.abs(xError) <= Constants.CLUSTER_X_DEADBAND
-                        ? 0
-                        : clamp(
-                                Constants.TURN_DIRECTION * xError * Constants.TURN_KP,
-                                -Constants.MAX_TURN_POWER,
-                                Constants.MAX_TURN_POWER
-                        );
+                        : Math.atan2(intakeTarget.right,
+                                Math.max(Constants.TURN_MIN_FORWARD_INCHES, intakeTarget.forward))
+                                / fovRadians;
+                // CCW rotation sweeps the target rightward, so error rate ~= omega / FOV.
+                double xErrorRate = omega / fovRadians;
+                // Predict the error now from the error when the frame was captured,
+                // using the rotation since then. Camera latency is a major source of
+                // overshoot: the robot keeps turning on an outdated error.
+                xError += xErrorRate * latencySeconds;
 
                 // Reduce translation while turning toward the target.
                 double alignmentScale = clamp(
@@ -184,10 +202,28 @@ public final class PollenAcquisition extends SubsystemBase {
                 // Robot-centric vision correction through Pedro's manual drive mode.
                 // Pedro positive strafe is left. Physical mode uses measured lateral
                 // error instead of adding the fixed right bias a second time.
+                // Turn and strafe both null the same lateral error, so in physical mode
+                // strafe only fades in inside the slow zone and turn gain fades out by
+                // the same amount, keeping the combined gain roughly constant.
+                double strafeBlend = intakeTarget == null || forward <= 0 ? 0 : 1 - proximityScale;
                 double strafe = intakeTarget == null ? -forward * Constants.APPROACH_RIGHT_STRAFE_RATIO
-                        : (forward <= 0 ? 0 : -clamp(intakeTarget.right * Constants.INTAKE_STRAFE_KP,
+                        : -clamp(intakeTarget.right * Constants.INTAKE_STRAFE_KP,
                                 -Constants.MAX_INTAKE_STRAFE_POWER, Constants.MAX_INTAKE_STRAFE_POWER)
-                                * alignmentScale);
+                                * alignmentScale * strafeBlend;
+                double turnGainScale = 1 - strafeBlend * (1 - Constants.TURN_NEAR_GAIN_SCALE);
+
+                double turn = Math.abs(xError) <= Constants.CLUSTER_X_DEADBAND
+                        ? 0
+                        : clamp(
+                                Constants.TURN_DIRECTION * (xError * Constants.TURN_KP * turnGainScale
+                                        + xErrorRate * Constants.TURN_KD),
+                                -Constants.MAX_TURN_POWER,
+                                Constants.MAX_TURN_POWER
+                        );
+
+                lastXError = xError;
+                lastTurn = turn;
+                lastStrafe = strafe;
                 follower.manual(forward, strafe, turn);
             }
 

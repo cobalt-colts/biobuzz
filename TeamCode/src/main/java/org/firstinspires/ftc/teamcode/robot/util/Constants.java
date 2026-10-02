@@ -37,7 +37,15 @@ public final class Constants {
     public static final double MIN_APPROACH_POWER = 0.20;
     // Rightward intake alignment bias as a fraction of forward power.
     public static final double APPROACH_RIGHT_STRAFE_RATIO = 0.20;
-    public static final double TURN_KP = 1.5;
+    public static final double TURN_KP = 1;
+    // Damps turn using measured yaw rate (normalized error per second).
+    public static final double TURN_KD = 0.08;
+    // Floor on the forward distance used for the intake bearing; caps turn gain up close.
+    public static final double TURN_MIN_FORWARD_INCHES = 10.0;
+    // Turn gain multiplier at the intake once strafe has fully taken over lateral correction.
+    public static final double TURN_NEAR_GAIN_SCALE = 0.4;
+    // Upper bound on vision latency used to predict the error forward.
+    public static final double MAX_LATENCY_COMPENSATION_S = 0.15;
     public static final double MAX_TURN_POWER = 0.50;
     // Positive Pedro turn is counterclockwise; positive image error is to the right.
     public static final double TURN_DIRECTION = -1.0;
