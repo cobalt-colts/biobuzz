@@ -14,44 +14,44 @@ import org.firstinspires.ftc.teamcode.robot.Robot;
 
 @TeleOp(name="RI3D TeleOp")
 public class RI3DTeleOp extends CommandOpMode {
-    Robot subsystems;
+    Robot robot;
     GamepadEx driverOp;
     Follower follower;
 
     @Override
     public void initialize() {
         super.reset();
-        subsystems = new Robot(hardwareMap, Robot.OpModeTypes.TELEOP, telemetry);
+        robot = new Robot(hardwareMap, Robot.OpModeTypes.TELEOP, telemetry);
 
         driverOp = new GamepadEx(gamepad1);
         follower = Constants.create(hardwareMap);
-        subsystems.pollenAcquisition.start();
+        robot.pollenAcquisition.start();
 
         new GamepadButton(driverOp, GamepadKeys.Button.START)
-                .whenPressed(subsystems.drive.resetHeading(follower));
+                .whenPressed(robot.drive.resetHeading(follower));
 
 //        new GamepadButton(driverOp, GamepadKeys.Button.RIGHT_BUMPER)
-//                .whenPressed(subsystems.flowerkicker.setKickerPos(.3))
-//                .whenReleased(subsystems.flowerkicker.setKickerPos(.85));
+//                .whenPressed(robot.flowerkicker.setKickerPos(.3))
+//                .whenReleased(robot.flowerkicker.setKickerPos(.85));
 
         /*new GamepadButton(driverOp, GamepadKeys.Button.DPAD_UP)
-                .whenPressed(subsystems.intake.setIntakeServoPos(.7));
+                .whenPressed(robot.intake.setIntakeServoPos(.7));
 
         new GamepadButton(driverOp, GamepadKeys.Button.DPAD_DOWN)
-                .whenPressed(subsystems.intake.setIntakeServoPos(.485));
+                .whenPressed(robot.intake.setIntakeServoPos(.485));
 
         new GamepadButton(driverOp, GamepadKeys.Button.LEFT_BUMPER)
-                .whenPressed(subsystems.intake.setIntakeMotorPow(-.5))
-                .whenReleased(subsystems.intake.setIntakeMotorPow(1));
+                .whenPressed(robot.intake.setIntakeMotorPow(-.5))
+                .whenReleased(robot.intake.setIntakeMotorPow(1));
 */
         new Trigger(() -> driverOp.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5)
-                .whenActive(subsystems.transfer.setTransferServoPower(1))
-                .whenInactive(subsystems.transfer.setTransferServoPower(0));
+                .whenActive(robot.transfer.setTransferServoPower(1))
+                .whenInactive(robot.transfer.setTransferServoPower(0));
 
-        Command acquirePollen = subsystems.pollenAcquisition.acquire(follower)
+        Command acquirePollen = robot.pollenAcquisition.acquire(follower)
                 /*.alongWith(
-                        subsystems.intake.setIntakeServoPos(.45),
-                        subsystems.intake.setIntakeMotorPow(1)
+                        robot.intake.setIntakeServoPos(.45),
+                        robot.intake.setIntakeMotorPow(1)
                 );*/;
 
         // Hold X to turn and approach the selected cluster; release to resume stick drive.
@@ -63,8 +63,8 @@ public class RI3DTeleOp extends CommandOpMode {
     public void run() {
         super.run();
 
-        if (!subsystems.pollenAcquisition.isActive()) {
-            subsystems.drive.driveFieldCentric(
+        if (!robot.pollenAcquisition.isActive()) {
+            robot.drive.driveFieldCentric(
                     driverOp.getLeftY(),
                     -driverOp.getLeftX(),
                     -driverOp.getRightX(),
@@ -75,22 +75,22 @@ public class RI3DTeleOp extends CommandOpMode {
 
         follower.update();
 
-        telemetry.addData("Pollen assist", subsystems.pollenAcquisition.isActive());
-        telemetry.addData("Pollen target", subsystems.pollenAcquisition.hasTarget());
-        subsystems.pollenAcquisition.addTelemetry(telemetry);
+        telemetry.addData("Pollen assist", robot.pollenAcquisition.isActive());
+        telemetry.addData("Pollen target", robot.pollenAcquisition.hasTarget());
+        robot.pollenAcquisition.addTelemetry(telemetry);
         telemetry.update();
     }
 
     @Override
     public void preRun() {
-//        subsystems.intake.setIntakeServoPos(.485).schedule();
-//        subsystems.intake.setIntakeMotorPow(1).schedule();
+//        robot.intake.setIntakeServoPos(.485).schedule();
+//        robot.intake.setIntakeMotorPow(1).schedule();
         follower.localizer.reset();
     }
 
     @Override
     public void end() {
-        subsystems.pollenAcquisition.stop();
+        robot.pollenAcquisition.stop();
         follower.stop();
     }
 }
