@@ -6,7 +6,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.robot.subsystems.*;
 
 
-public class Subsystems {
+public class Robot {
     public enum OpModeTypes {
         TELEOP,
         AUTO
@@ -20,7 +20,7 @@ public class Subsystems {
     public Transfer transfer;
     public OpModeTypes opmodetype;
 
-    public Subsystems (HardwareMap hardwareMap, OpModeTypes opmodetype, Telemetry telemetry) {
+    public Robot (HardwareMap hardwareMap, OpModeTypes opmodetype, Telemetry telemetry) {
         this.drive = new Drive();
         //this.intake = new Intake(hardwareMap);
 //        this.flowerkicker = new FlowerKicker(hardwareMap);

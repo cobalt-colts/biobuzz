@@ -10,18 +10,18 @@ import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
-import org.firstinspires.ftc.teamcode.robot.Subsystems;
+import org.firstinspires.ftc.teamcode.robot.Robot;
 
 @TeleOp(name="RI3D TeleOp")
 public class RI3DTeleOp extends CommandOpMode {
-    Subsystems subsystems;
+    Robot subsystems;
     GamepadEx driverOp;
     Follower follower;
 
     @Override
     public void initialize() {
         super.reset();
-        subsystems = new Subsystems(hardwareMap, Subsystems.OpModeTypes.TELEOP, telemetry);
+        subsystems = new Robot(hardwareMap, Robot.OpModeTypes.TELEOP, telemetry);
 
         driverOp = new GamepadEx(gamepad1);
         follower = Constants.create(hardwareMap);
