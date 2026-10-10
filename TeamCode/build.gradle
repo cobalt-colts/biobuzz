@@ -15,14 +15,14 @@ apply plugin: 'dev.frozenmilk.sinister.sloth.load'
 
 buildscript {
     repositories {
-        google()
         mavenCentral()
+        google()
         maven {
             url "https://repo.dairy.foundation/releases"
         }
     }
     dependencies {
-        classpath "dev.frozenmilk:Load:0.3.1"
+        classpath "dev.frozenmilk:Load:0.3.2"
     }
 }
 
@@ -53,7 +53,7 @@ dependencies {
     implementation project(':FtcRobotController')
     implementation "org.solverslib:core:0.3.6" // core
     implementation "org.solverslib:pedroPathing:0.3.6" // pedroPathing
-    implementation("dev.frozenmilk.sinister:Sloth:0.3.1")
-    implementation("com.acmerobotics.slothboard:dashboard:0.3.1+0.6.0")
-//    implementation("com.bylazar.sloth:fullpanels:0.3.2+1.0.13") // oscar did not lock in
+    implementation("dev.frozenmilk.sinister:Sloth:0.3.2")
+    implementation 'com.skeletonarmyftc.marrow:core:1.2.0' // for on the fly path gen
+    implementation "com.bylazar:fullpanels:1.0.18"
 }

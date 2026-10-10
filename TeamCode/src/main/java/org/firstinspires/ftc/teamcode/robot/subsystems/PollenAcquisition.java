@@ -1,12 +1,17 @@
 package org.firstinspires.ftc.teamcode.robot.subsystems;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.math.Pose;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.CommandBase;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
+import com.skeletonarmy.marrow.weaver.PathConfig;
+import com.skeletonarmy.marrow.weaver.PathResult;
+import com.skeletonarmy.marrow.weaver.PedroPathingConverter;
+import com.skeletonarmy.marrow.weaver.Weaver;
 
 import org.firstinspires.ftc.teamcode.robot.util.Constants;
 import org.firstinspires.ftc.teamcode.robot.util.CameraGeometry;
@@ -27,13 +32,14 @@ public final class PollenAcquisition extends SubsystemBase {
     private double clusterX = Double.NaN;
     private double clusterY = Double.NaN;
     private double latencySeconds;
-    private double lastXError = Double.NaN;
-    private double lastTurn;
-    private double lastStrafe;
+    private String pathStatus = "Idle";
 
     public PollenAcquisition(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, Constants.LIMELIGHT_NAME);
         limelight.setPollRateHz(Constants.LIMELIGHT_POLL_RATE_HZ);
+        Weaver.setConfig(new PathConfig()
+                .robotWidth(Constants.ROBOT_FORWARD_LENGTH_INCHES)
+                .robotHeight(Constants.ROBOT_LATERAL_WIDTH_INCHES));
     }
 
     public void start() {
@@ -59,6 +65,11 @@ public final class PollenAcquisition extends SubsystemBase {
 
     public double getClusterY() {
         return clusterY;
+    }
+
+    /** Latest validated target position in inches relative to the intake. */
+    public CameraGeometry.Target getIntakeTarget() {
+        return hasTarget ? intakeTarget : null;
     }
 
     @Override
@@ -136,15 +147,25 @@ public final class PollenAcquisition extends SubsystemBase {
         }
         telemetry.addData("Limelight Python", pythonOutput == null ? "missing"
                 : Arrays.toString(Arrays.copyOf(pythonOutput, Math.min(8, pythonOutput.length))));
-        telemetry.addData("Pollen control", "xErr=%.3f turn=%.2f strafe=%.2f latency=%.0fms",
-                lastXError, lastTurn, lastStrafe, latencySeconds * 1000);
+        telemetry.addData("Pollen path", pathStatus);
+        telemetry.addData("Limelight latency ms", "%.0f", latencySeconds * 1000);
         telemetry.addData("Pollen cluster", hasTarget
                 ? String.format(java.util.Locale.US, "%.2f, %.2f", clusterX, clusterY)
                 : "unavailable");
     }
 
+    /**
+     * Locks onto the cluster once, builds a single Weaver path to it, and lets Pedro
+     * follow that path to the end. The path is never re-planned while X is held, so
+     * vision noise and the cluster leaving the camera view cannot make it wander.
+     */
     public Command acquire(Follower follower) {
         return new CommandBase() {
+            private double sumX;
+            private double sumY;
+            private int samples;
+            private boolean planned;
+
             {
                 addRequirements(PollenAcquisition.this);
             }
@@ -152,85 +173,70 @@ public final class PollenAcquisition extends SubsystemBase {
             @Override
             public void initialize() {
                 active = true;
+                sumX = 0;
+                sumY = 0;
+                samples = 0;
+                planned = false;
+                pathStatus = "Locking target";
                 follower.manual(0, 0, 0);
             }
 
             @Override
             public void execute() {
-                if (!hasTarget) {
-                    lastXError = Double.NaN;
-                    lastTurn = 0;
-                    lastStrafe = 0;
-                    follower.manual(0, 0, 0);
+                if (planned) {
+                    pathStatus = follower.isBusy() ? "Following path" : "Holding at cluster";
+                    return;
+                }
+                if (!hasTarget || intakeTarget == null) {
                     return;
                 }
 
-                double fovRadians = Math.toRadians(Constants.CAMERA_HORIZONTAL_FOV_DEGREES);
-                double omega = follower.velocity().omega;
+                // Average the cluster in field coordinates so the robot coasting to a
+                // stop during the lock does not skew the estimate.
+                Pose pose = follower.pose();
+                double forward = Constants.INTAKE_FORWARD_OF_ROBOT_CENTER_INCHES + intakeTarget.forward;
+                // CameraGeometry uses forward/right; Pedro's local +Y is left.
+                double left = -(Constants.INTAKE_RIGHT_OF_ROBOT_CENTER_INCHES + intakeTarget.right);
+                double cos = Math.cos(pose.heading());
+                double sin = Math.sin(pose.heading());
+                sumX += pose.x() + forward * cos - left * sin;
+                sumY += pose.y() + forward * sin + left * cos;
+                if (++samples < Constants.TARGET_LOCK_SAMPLES) {
+                    return;
+                }
 
-                // Intake-relative bearing. Flooring the forward distance keeps the
-                // effective gain from exploding as the cluster nears the intake, where
-                // a small lateral offset would otherwise read as a huge angle.
-                double xError = intakeTarget == null ? clusterX - Constants.CLUSTER_X_SETPOINT
-                        : Math.atan2(intakeTarget.right,
-                                Math.max(Constants.TURN_MIN_FORWARD_INCHES, intakeTarget.forward))
-                                / fovRadians;
-                // CCW rotation sweeps the target rightward, so error rate ~= omega / FOV.
-                double xErrorRate = omega / fovRadians;
-                // Predict the error now from the error when the frame was captured,
-                // using the rotation since then. Camera latency is a major source of
-                // overshoot: the robot keeps turning on an outdated error.
-                xError += xErrorRate * latencySeconds;
+                double clusterFieldX = sumX / samples;
+                double clusterFieldY = sumY / samples;
+                double heading = Math.atan2(clusterFieldY - pose.y(), clusterFieldX - pose.x());
+                // Park the robot center so the intake faces the cluster at the stop distance.
+                double back = Constants.INTAKE_FORWARD_OF_ROBOT_CENTER_INCHES
+                        + Constants.CLUSTER_STOP_DISTANCE_INCHES;
+                double right = Constants.INTAKE_RIGHT_OF_ROBOT_CENTER_INCHES;
+                Pose end = new Pose(
+                        clusterFieldX - back * Math.cos(heading) - right * Math.sin(heading),
+                        clusterFieldY - back * Math.sin(heading) + right * Math.cos(heading),
+                        heading);
 
-                // Reduce translation while turning toward the target.
-                double alignmentScale = clamp(
-                        (Constants.TURN_ONLY_ERROR - Math.abs(xError))
-                                / (Constants.TURN_ONLY_ERROR - Constants.CLUSTER_X_DEADBAND),
-                        0, 1);
-                double proximityScale = intakeTarget == null ? clamp(
-                        (Constants.CLUSTER_Y_STOP - clusterY)
-                                / (Constants.CLUSTER_Y_STOP - Constants.CLUSTER_Y_SLOW), 0, 1)
-                        : clamp((intakeTarget.forward - Constants.CLUSTER_STOP_DISTANCE_INCHES)
-                                / (Constants.CLUSTER_SLOW_DISTANCE_INCHES - Constants.CLUSTER_STOP_DISTANCE_INCHES), 0, 1);
-                boolean closeEnough = intakeTarget == null ? clusterY >= Constants.CLUSTER_Y_STOP
-                        : intakeTarget.forward <= Constants.CLUSTER_STOP_DISTANCE_INCHES;
-                // At the intake threshold, stop translation but finish aligning.
-                double forward = closeEnough ? 0
-                        : alignmentScale * (Constants.MIN_APPROACH_POWER
-                                + (Constants.APPROACH_POWER - Constants.MIN_APPROACH_POWER) * proximityScale);
-
-                // Robot-centric vision correction through Pedro's manual drive mode.
-                // Pedro positive strafe is left. Physical mode uses measured lateral
-                // error instead of adding the fixed right bias a second time.
-                // Turn and strafe both null the same lateral error, so in physical mode
-                // strafe only fades in inside the slow zone and turn gain fades out by
-                // the same amount, keeping the combined gain roughly constant.
-                double strafeBlend = intakeTarget == null || forward <= 0 ? 0 : 1 - proximityScale;
-                double strafe = intakeTarget == null ? -forward * Constants.APPROACH_RIGHT_STRAFE_RATIO
-                        : -clamp(intakeTarget.right * Constants.INTAKE_STRAFE_KP,
-                                -Constants.MAX_INTAKE_STRAFE_POWER, Constants.MAX_INTAKE_STRAFE_POWER)
-                                * alignmentScale * strafeBlend;
-                double turnGainScale = 1 - strafeBlend * (1 - Constants.TURN_NEAR_GAIN_SCALE);
-
-                double turn = Math.abs(xError) <= Constants.CLUSTER_X_DEADBAND
-                        ? 0
-                        : clamp(
-                                Constants.TURN_DIRECTION * (xError * Constants.TURN_KP * turnGainScale
-                                        + xErrorRate * Constants.TURN_KD),
-                                -Constants.MAX_TURN_POWER,
-                                Constants.MAX_TURN_POWER
-                        );
-
-                lastXError = xError;
-                lastTurn = turn;
-                lastStrafe = strafe;
-                follower.manual(forward, strafe, turn);
+                if (Math.hypot(end.x() - pose.x(), end.y() - pose.y()) < Constants.MIN_PATH_LENGTH_INCHES) {
+                    follower.hold(end);
+                } else {
+                    PathResult result = Weaver.builder()
+                            .start(PedroPathingConverter.toPoint(pose))
+                            .end(PedroPathingConverter.toPoint(end))
+                            .build();
+                    // Constant heading: Pedro turns to the final heading immediately and
+                    // holds one setpoint the whole way, instead of chasing the tangent.
+                    follower.follow(PedroPathingConverter.toPath(result).constant(heading));
+                }
+                planned = true;
+                pathStatus = "Following path";
             }
 
             @Override
             public void end(boolean interrupted) {
                 follower.stop();
                 active = false;
+                pathStatus = "Idle";
             }
 
             @Override

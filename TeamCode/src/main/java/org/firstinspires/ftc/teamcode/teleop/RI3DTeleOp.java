@@ -54,7 +54,7 @@ public class RI3DTeleOp extends CommandOpMode {
                         robot.intake.setIntakeMotorPow(1)
                 );*/;
 
-        // Hold X to turn and approach the selected cluster; release to resume stick drive.
+        // Hold X to lock the cluster and follow one Pedro path to it; release to resume stick drive.
         new GamepadButton(driverOp, GamepadKeys.Button.X)
                 .whenHeld(acquirePollen);
     }

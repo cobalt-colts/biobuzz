@@ -23,34 +23,19 @@ public final class Constants {
     // Estimated cluster center distance in front of the intake opening.
     public static final double CLUSTER_STOP_DISTANCE_INCHES = 2.0;
     public static final double CLUSTER_SLOW_DISTANCE_INCHES = 12.0;
-    public static final double INTAKE_STRAFE_KP = 0.035;
-    public static final double MAX_INTAKE_STRAFE_POWER = 0.20;
-
-    // Tune this to the intake center in the camera image when the camera is offset.
-    public static final double CLUSTER_X_SETPOINT = 0.5;
-    public static final double CLUSTER_X_DEADBAND = 0.025;
-    // Image position is a proximity cue, not a measured distance. Tune on the robot.
-    public static final double CLUSTER_Y_SLOW = 0.80;
-    public static final double CLUSTER_Y_STOP = 0.94;
-
-    public static final double APPROACH_POWER = 0.60;
-    public static final double MIN_APPROACH_POWER = 0.20;
-    // Rightward intake alignment bias as a fraction of forward power.
-    public static final double APPROACH_RIGHT_STRAFE_RATIO = 0.20;
-    public static final double TURN_KP = 1;
-    // Damps turn using measured yaw rate (normalized error per second).
-    public static final double TURN_KD = 0.08;
-    // Floor on the forward distance used for the intake bearing; caps turn gain up close.
-    public static final double TURN_MIN_FORWARD_INCHES = 10.0;
-    // Turn gain multiplier at the intake once strafe has fully taken over lateral correction.
-    public static final double TURN_NEAR_GAIN_SCALE = 0.4;
-    // Upper bound on vision latency used to predict the error forward.
+    // Upper bound on vision latency reported in telemetry.
     public static final double MAX_LATENCY_COMPENSATION_S = 0.15;
-    public static final double MAX_TURN_POWER = 0.50;
-    // Positive Pedro turn is counterclockwise; positive image error is to the right.
-    public static final double TURN_DIRECTION = -1.0;
-    // Turn in place outside this horizontal error (fraction of image width).
-    public static final double TURN_ONLY_ERROR = 0.35;
+
+    // Pollen path (X in teleop). Measure the intake offsets from the robot center
+    // (Pedro's tracked point) to the intake opening before relying on the stop point.
+    public static final double INTAKE_FORWARD_OF_ROBOT_CENTER_INCHES = 9.0;
+    public static final double INTAKE_RIGHT_OF_ROBOT_CENTER_INCHES = 0.0;
+    public static final double ROBOT_FORWARD_LENGTH_INCHES = 16.0;
+    public static final double ROBOT_LATERAL_WIDTH_INCHES = 16.0;
+    // Loop samples averaged into one field-frame cluster estimate before planning.
+    public static final int TARGET_LOCK_SAMPLES = 5;
+    // Shorter moves just hold the end pose instead of building a path.
+    public static final double MIN_PATH_LENGTH_INCHES = 1.0;
 
     public static final int CLUSTER_BLOB_COUNT_INDEX = 1;
     public static final int NORMALIZED_CLUSTER_X_INDEX = 2;
