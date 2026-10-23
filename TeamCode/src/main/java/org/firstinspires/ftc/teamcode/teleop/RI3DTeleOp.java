@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
 import com.pedropathing.follower.Follower;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
@@ -12,6 +13,7 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.robot.Robot;
 
+@Disabled
 @TeleOp(name="RI3D TeleOp")
 public class RI3DTeleOp extends CommandOpMode {
     Robot robot;
@@ -45,18 +47,18 @@ public class RI3DTeleOp extends CommandOpMode {
                 .whenReleased(robot.intake.setIntakeMotorPow(1));
 */
         new Trigger(() -> driverOp.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5)
-                .whenActive(robot.transfer.setTransferServoPower(1))
-                .whenInactive(robot.transfer.setTransferServoPower(0));
+                .whenActive(robot.transfer.setTransferPowerCommand(1))
+                .whenInactive(robot.transfer.setTransferPowerCommand(0));
 
-        Command acquirePollen = robot.pollenAcquisition.acquire(follower)
-                /*.alongWith(
-                        robot.intake.setIntakeServoPos(.45),
-                        robot.intake.setIntakeMotorPow(1)
-                );*/;
+//        Command acquirePollen = robot.pollenAcquisition.acquire(follower)
+//                /*.alongWith(
+//                        robot.intake.setIntakeServoPos(.45),
+//                        robot.intake.setIntakeMotorPow(1)
+//                );*/;
 
-        // Hold X to lock the cluster and follow one Pedro path to it; release to resume stick drive.
-        new GamepadButton(driverOp, GamepadKeys.Button.X)
-                .whenHeld(acquirePollen);
+//        // Hold X to lock the cluster and follow one Pedro path to it; release to resume stick drive.
+//        new GamepadButton(driverOp, GamepadKeys.Button.X)
+//                .whenHeld(acquirePollen);
     }
 
     @Override
