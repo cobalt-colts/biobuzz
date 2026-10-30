@@ -54,6 +54,6 @@ dependencies {
     implementation "org.solverslib:core:0.3.6" // core
     implementation "org.solverslib:pedroPathing:0.3.6" // pedroPathing
     implementation("dev.frozenmilk.sinister:Sloth:0.3.2")
-    implementation 'com.skeletonarmyftc.marrow:core:1.2.0' // for on the fly path gen
-    implementation "com.bylazar:fullpanels:1.0.18"
+    implementation 'com.skeletonarmyftc.marrow:core:1.2.2' // for on the fly path gen
+    implementation "com.bylazar:fullpanels:1.0.19"
 }

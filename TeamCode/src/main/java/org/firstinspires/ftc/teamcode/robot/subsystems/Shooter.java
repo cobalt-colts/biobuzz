@@ -18,14 +18,14 @@ public class Shooter extends SubsystemBase {
 
     Telemetry telemetry;
 
-    public static double kp = 0.2;
+    public static double kp = 2.5;
     public static double ki = 0;
     public static double kd = 0;
     public static double kf = 1.2;
 
     PIDFController shooterPIDF = new PIDFController(kp, ki, kd, kf);
 
-    public static int speed = 1500;
+    public static int speed = 1300;
 
     public Shooter(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -37,6 +37,10 @@ public class Shooter extends SubsystemBase {
 
     public Command incrementSpeed(int changeBy) {
         return new InstantCommand(() -> speed += changeBy);
+    }
+
+    public Command killShooter() {
+        return new InstantCommand(() -> speed = 0);
     }
 
     @Override

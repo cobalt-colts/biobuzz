@@ -13,6 +13,7 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.robot.Robot;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Shooter;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Transfer;
 
 @TeleOp(name="COWTOWN TeleOp")
 public class CowtownTeleOp extends CommandOpMode {
@@ -46,13 +47,12 @@ public class CowtownTeleOp extends CommandOpMode {
 
         // invert intake button
         new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER)
-                .whenPressed(robot.intake.setIntakeMotorPow(-1))
+                .whenPressed(robot.intake.setIntakeMotorPow(-.5))
                 .whenReleased(robot.intake.setIntakeMotorPow(0));
 
-        // transfer button
-        new Trigger(() -> driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5)
-                .whenActive(robot.transfer.setTransferPowerCommand(1))
-                .whenInactive(robot.transfer.setTransferPowerCommand(0));
+        new Trigger(() -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.1)
+                .whenActive(robot.transfer.setKickPos(Transfer.kickUp))
+                .whenInactive(robot.transfer.setKickPos(Transfer.kickDown));
 
         // change speed +- 50
         new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP)
@@ -60,13 +60,23 @@ public class CowtownTeleOp extends CommandOpMode {
 
         new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN)
                 .whenPressed(robot.shooter.incrementSpeed(-50));
+
+        new GamepadButton(driver1, GamepadKeys.Button.SQUARE)
+                .whenPressed(robot.intake.extendFlower());
+
+        new GamepadButton(driver1, GamepadKeys.Button.CIRCLE)
+                .whenPressed(robot.intake.retractFlower());
     }
 
     @Override
     public void preRun() {
+        Shooter.speed = 1280;
+
         follower.localizer.reset();
         // Pinpoint's default reset recalibrates the IMU but preserves its heading.
         follower.setHeading(0);
+
+        robot.intake.retractFlower().schedule();
     }
 
     @Override
@@ -81,6 +91,8 @@ public class CowtownTeleOp extends CommandOpMode {
                 -driver1.getRightY(),
                 follower
         );
+
+        robot.transfer.setTransferPower(driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER));
 
         follower.update();
 

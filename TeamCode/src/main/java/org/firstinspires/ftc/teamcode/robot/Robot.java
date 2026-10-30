@@ -28,7 +28,7 @@ public class Robot {
 //        this.flowerkicker = new FlowerKicker(hardwareMap);
 //        this.pollenAcquisition = new PollenAcquisition(hardwareMap);
         this.shooter = new Shooter(hardwareMap, telemetry);
-        this.transfer = new Transfer(hardwareMap);
+        this.transfer = new Transfer(hardwareMap, this);
         this.opmodetype = opmodetype;
     }
 }

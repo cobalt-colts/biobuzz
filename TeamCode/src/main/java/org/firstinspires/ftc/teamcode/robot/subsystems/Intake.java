@@ -10,13 +10,23 @@ import com.seattlesolvers.solverslib.hardware.servos.ServoExGroup;
 
 public class Intake extends SubsystemBase {
     Motor intake;
+    ServoEx flower;
 
     public Intake(HardwareMap hardwareMap) {
         intake = new Motor(hardwareMap, "intake");
+        flower = new ServoEx(hardwareMap, "flower");
         intake.set(0);
     }
 
     public Command setIntakeMotorPow(double pow) {
         return new InstantCommand(() -> intake.set(pow));
+    }
+
+    public Command extendFlower() {
+        return new InstantCommand(() -> flower.set(.94));
+    }
+
+    public Command retractFlower() {
+        return new InstantCommand(() -> flower.set(1));
     }
 }
