@@ -15,7 +15,7 @@ public class servotuner extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        gate = hardwareMap.servo.get("flicker");
+        gate = hardwareMap.servo.get("flower");
 
         waitForStart();
 

@@ -12,8 +12,13 @@ public class Intake extends SubsystemBase {
     Motor intake;
     ServoEx flower;
 
+    public static double flowerUp = .3;
+    public static double flowerDrive = .32;
+    public static double flowerDown = .4;
+
     public Intake(HardwareMap hardwareMap) {
         intake = new Motor(hardwareMap, "intake");
+        intake.setInverted(true);
         flower = new ServoEx(hardwareMap, "flower");
         intake.set(0);
     }
@@ -22,11 +27,15 @@ public class Intake extends SubsystemBase {
         return new InstantCommand(() -> intake.set(pow));
     }
 
-    public Command extendFlower() {
-        return new InstantCommand(() -> flower.set(.94));
+    public Command flowerDown() {
+        return new InstantCommand(() -> flower.set(flowerDown));
     }
 
-    public Command retractFlower() {
-        return new InstantCommand(() -> flower.set(1));
+    public Command flowerUp() {
+        return new InstantCommand(() -> flower.set(flowerDrive));
+    }
+
+    public Command flowerStore() {
+        return new InstantCommand(() -> flower.set(flowerUp));
     }
 }

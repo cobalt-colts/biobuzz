@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.robot.subsystems;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.command.Command;
+import com.seattlesolvers.solverslib.command.ConditionalCommand;
 import com.seattlesolvers.solverslib.command.InstantCommand;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
@@ -22,7 +23,7 @@ public class Transfer extends SubsystemBase {
     ServoEx kicker;
     Robot robot;
 
-    public static double kickUp = .53;
+    public static double kickUp = .5425;
     public static double kickDown = .735;
 
 
@@ -44,9 +45,15 @@ public class Transfer extends SubsystemBase {
 
     public Command kick() {
         return new SequentialCommandGroup(
+                new ConditionalCommand(
+                        new InstantCommand(() -> Shooter.speed = 1250),
+                        new InstantCommand(() -> Shooter.speed = 1260),
+                        () -> robot.opmodetype == Robot.OpModeTypes.AUTO
+                ),
                 new InstantCommand(() -> kicker.set(kickUp)),
-                new WaitCommand(500),
-                new InstantCommand(() -> kicker.set(kickDown))
+                new WaitCommand(250),
+                new InstantCommand(() -> kicker.set(kickDown)),
+                new InstantCommand(() -> Shooter.speed = 1280)
         );
     }
 

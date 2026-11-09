@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import com.bylazar.gamepad.PanelsGamepad;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
@@ -13,10 +14,9 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.robot.Robot;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.robot.subsystems.Transfer;
 
-@TeleOp(name="COWTOWN TeleOp")
-public class CowtownTeleOp extends CommandOpMode {
+@TeleOp(name="MEET 1 TeleOp")
+public class MEET1TeleOp extends CommandOpMode {
     Robot robot;
 
     TelemetryManager.TelemetryWrapper panelsTelemetry = PanelsTelemetry.INSTANCE.getFtcTelemetry();
@@ -50,9 +50,8 @@ public class CowtownTeleOp extends CommandOpMode {
                 .whenPressed(robot.intake.setIntakeMotorPow(-.5))
                 .whenReleased(robot.intake.setIntakeMotorPow(0));
 
-        new Trigger(() -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.1)
-                .whenActive(robot.transfer.setKickPos(Transfer.kickUp))
-                .whenInactive(robot.transfer.setKickPos(Transfer.kickDown));
+        new Trigger(() -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.5)
+                .toggleWhenActive(robot.transfer.kick());
 
         // change speed +- 50
         new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP)
@@ -61,11 +60,11 @@ public class CowtownTeleOp extends CommandOpMode {
         new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN)
                 .whenPressed(robot.shooter.incrementSpeed(-50));
 
-        new GamepadButton(driver1, GamepadKeys.Button.SQUARE)
-                .whenPressed(robot.intake.extendFlower());
-
         new GamepadButton(driver1, GamepadKeys.Button.CIRCLE)
-                .whenPressed(robot.intake.retractFlower());
+                .whenPressed(robot.intake.flowerUp());
+
+        new GamepadButton(driver1, GamepadKeys.Button.SQUARE)
+                .whenPressed(robot.intake.flowerDown());
     }
 
     @Override
@@ -76,11 +75,20 @@ public class CowtownTeleOp extends CommandOpMode {
         // Pinpoint's default reset recalibrates the IMU but preserves its heading.
         follower.setHeading(0);
 
-        robot.intake.retractFlower().schedule();
+        robot.intake.flowerUp().schedule();
     }
 
     @Override
     public void run() {
+        // Refresh Panels and physical controller input before polling button bindings.
+        driver1.gamepad = PanelsGamepad.INSTANCE.getFirstManager()
+                .asCombinedFTCGamepad(gamepad1);
+        driver2.gamepad = PanelsGamepad.INSTANCE.getSecondManager()
+                .asCombinedFTCGamepad(gamepad2);
+        // Panels supplies Options but does not populate the FTC Start alias.
+        driver1.gamepad.start = gamepad1.start || driver1.gamepad.options;
+        driver2.gamepad.start = gamepad2.start || driver2.gamepad.options;
+
         // Poll button bindings and run subsystem periodic methods each loop.
         super.run();
 
@@ -92,7 +100,7 @@ public class CowtownTeleOp extends CommandOpMode {
                 follower
         );
 
-        robot.transfer.setTransferPower(driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER));
+        robot.transfer.setTransferPower(Math.sqrt(driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)));
 
         follower.update();
 
