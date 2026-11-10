@@ -70,7 +70,6 @@ public class HIVEMEET1Auto extends CommandOpMode {
 
     @Override
     public void run() {
-        // Poll button bindings and run subsystem periodic methods each loop.
         super.run();
 
         follower.update();

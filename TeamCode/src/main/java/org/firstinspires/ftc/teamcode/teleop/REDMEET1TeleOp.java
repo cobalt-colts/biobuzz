@@ -60,12 +60,12 @@ public class REDMEET1TeleOp extends CommandOpMode {
         new Trigger(() -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.5)
                 .toggleWhenActive(robot.transfer.kick());
 
-        // change speed +- 50
-        new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP)
-                .whenPressed(robot.shooter.incrementSpeed(50));
-
-        new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN)
-                .whenPressed(robot.shooter.incrementSpeed(-50));
+//        // change speed +- 50
+//        new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP)
+//                .whenPressed(robot.shooter.incrementSpeed(50));
+//
+//        new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN)
+//                .whenPressed(robot.shooter.incrementSpeed(-50));
 
         // flower
         new GamepadButton(driver1, GamepadKeys.Button.CIRCLE)
@@ -84,10 +84,10 @@ public class REDMEET1TeleOp extends CommandOpMode {
         //
 
         // Goal State
-        new GamepadButton(driver2, GamepadKeys.Button.DPAD_UP)
+        new GamepadButton(driver2, GamepadKeys.Button.DPAD_LEFT)
                 .whenPressed(() -> robot.goalState.goalUp());
 
-        new GamepadButton(driver2, GamepadKeys.Button.DPAD_DOWN)
+        new GamepadButton(driver2, GamepadKeys.Button.DPAD_RIGHT)
                 .whenPressed(() -> robot.goalState.goalDown());
 
     }

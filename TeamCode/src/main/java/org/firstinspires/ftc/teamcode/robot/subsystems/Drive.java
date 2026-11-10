@@ -86,9 +86,7 @@ public final class Drive extends SubsystemBase {
                     turnPower,
                     follower.pose().heading() - fieldHeadingOffset);
             follower.manual(powers);
-
         } else {
-
             double currentHeading = follower.pose().heading();
             double joystickHeading = Math.atan2(turnx, turny) + fieldHeadingOffset;
 
