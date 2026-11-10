@@ -5,22 +5,29 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.Utility;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.seattlesolvers.solverslib.hardware.servos.ServoEx;
+import com.seattlesolvers.solverslib.hardware.servos.ServoExGroup;
 
 @Configurable
 @TeleOp(name="servo tuner")
 public class servotuner extends LinearOpMode {
-    Servo gate;
+    ServoEx flower1;
+    ServoEx flower2;
+    ServoExGroup flower;
 
-    public static double gatepos = 0.5;
+    public static double flowerpos = 0.5;
 
     @Override
     public void runOpMode() {
-        gate = hardwareMap.servo.get("flower");
+        flower1 = new ServoEx(hardwareMap, "flower1");
+        flower2 = new ServoEx(hardwareMap, "flower2").setInverted(true);
+        flower = new ServoExGroup(flower1, flower2);
+
 
         waitForStart();
 
         while (opModeIsActive()) {
-            gate.setPosition(gatepos);
+            flower.set(flowerpos);
         }
     }
 }

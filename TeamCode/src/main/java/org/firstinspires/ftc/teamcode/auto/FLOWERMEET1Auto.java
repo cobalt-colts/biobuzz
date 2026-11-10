@@ -42,7 +42,7 @@ public class FLOWERMEET1Auto extends CommandOpMode {
     @Override
     public void initialize() {
         super.reset();
-        robot = new Robot(hardwareMap, Robot.OpModeTypes.AUTO, telemetry);
+        robot = new Robot(hardwareMap, Robot.OpModeTypes.AUTO, telemetry, Robot.Alliance.RED);
 
         follower = Constants.create(hardwareMap);
 
@@ -69,7 +69,7 @@ public class FLOWERMEET1Auto extends CommandOpMode {
 
     @Override
     public void end() {
-        PoseStorage.save(follower.pose());
+        PoseStorage.save(follower.pose(), Robot.Alliance.RED);
 
         robot.intake.setIntakeMotorPow(0).initialize();
         robot.transfer.setTransferPower(0);

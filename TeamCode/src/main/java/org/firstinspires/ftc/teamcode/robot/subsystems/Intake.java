@@ -10,16 +10,22 @@ import com.seattlesolvers.solverslib.hardware.servos.ServoExGroup;
 
 public class Intake extends SubsystemBase {
     Motor intake;
-    ServoEx flower;
+    ServoEx flower1;
+    ServoEx flower2;
+    ServoExGroup flower;
 
-    public static double flowerUp = .3;
-    public static double flowerDrive = .32;
-    public static double flowerDown = .4;
+    public static double flowerUp = 0.0;
+    public static double flowerDrive = .1;
+    public static double flowerDown = .48;
 
     public Intake(HardwareMap hardwareMap) {
         intake = new Motor(hardwareMap, "intake");
         intake.setInverted(true);
-        flower = new ServoEx(hardwareMap, "flower");
+
+        flower1 = new ServoEx(hardwareMap, "flower1");
+        flower2 = new ServoEx(hardwareMap, "flower2").setInverted(true);
+        flower = new ServoExGroup(flower1, flower2);
+
         intake.set(0);
     }
 

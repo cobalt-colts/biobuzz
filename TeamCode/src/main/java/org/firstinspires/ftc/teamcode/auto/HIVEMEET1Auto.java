@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.robot.Robot;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Shooter;
 
-@Autonomous(name="FAR MEET 1 Auto")
+@Autonomous(name="HIVE MEET 1 Auto")
 public class HIVEMEET1Auto extends CommandOpMode {
     Robot robot;
     Follower follower;
@@ -53,7 +53,7 @@ public class HIVEMEET1Auto extends CommandOpMode {
     @Override
     public void initialize() {
         super.reset();
-        robot = new Robot(hardwareMap, Robot.OpModeTypes.AUTO, telemetry);
+        robot = new Robot(hardwareMap, Robot.OpModeTypes.AUTO, telemetry, Robot.Alliance.RED);
 
         follower = Constants.create(hardwareMap);
 
