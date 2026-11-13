@@ -90,7 +90,7 @@ public final class Drive extends SubsystemBase {
             double currentHeading = follower.pose().heading();
             double joystickHeading = Math.atan2(turnx, turny) + fieldHeadingOffset;
 
-            if (Math.hypot(turnx, turny) <= 0.05) {
+            if (Math.hypot(turnx, turny) <= 0.1) {
                 joystickHeading = lastCommandedHeading;
             } else {
                 lastCommandedHeading = joystickHeading;

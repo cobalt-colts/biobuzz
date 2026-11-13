@@ -1,11 +1,16 @@
 package org.firstinspires.ftc.teamcode.teleop;
 
+import static org.firstinspires.ftc.teamcode.robot.subsystems.Drive.NON_FLOWER_RED_CELL;
+
 import com.bylazar.gamepad.PanelsGamepad;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
+import com.seattlesolvers.solverslib.command.ParallelCommandGroup;
+import com.seattlesolvers.solverslib.command.ParallelRaceGroup;
 import com.seattlesolvers.solverslib.command.button.GamepadButton;
 import com.seattlesolvers.solverslib.command.button.Trigger;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
@@ -14,8 +19,8 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.robot.Robot;
 import org.firstinspires.ftc.teamcode.robot.subsystems.Shooter;
+import org.firstinspires.ftc.teamcode.robot.subsystems.Transfer;
 import org.firstinspires.ftc.teamcode.robot.util.PoseStorage;
-
 
 @TeleOp(name="RED MEET 1 TeleOp")
 public class REDMEET1TeleOp extends CommandOpMode {
@@ -27,6 +32,7 @@ public class REDMEET1TeleOp extends CommandOpMode {
     GamepadEx driver2;
 
     Follower follower;
+    Pose startPose;
 
     @Override
     public void initialize() {
@@ -37,6 +43,11 @@ public class REDMEET1TeleOp extends CommandOpMode {
         driver2 = new GamepadEx(gamepad2);
 
         follower = Constants.create(hardwareMap);
+        robot.shooter.configureAim(() -> follower.pose(), robot.goalState);
+
+        // Grab the auto pose during init so the handoff can't expire while waiting for START.
+        startPose = PoseStorage.consumeOrDefault(PoseStorage.DEFAULT_RED_TELEOP_POSE, Robot.Alliance.RED);
+        follower.setPose(startPose);
 
         //
         // Driver 1 Controls
@@ -51,10 +62,17 @@ public class REDMEET1TeleOp extends CommandOpMode {
                 .whenPressed(robot.intake.setIntakeMotorPow(1))
                 .whenReleased(robot.intake.setIntakeMotorPow(0));
 
-        // invert intake button
+        // reverse every-fuckin-thing button
         new GamepadButton(driver1, GamepadKeys.Button.LEFT_BUMPER)
-                .whenPressed(robot.intake.setIntakeMotorPow(-.5))
-                .whenReleased(robot.intake.setIntakeMotorPow(0));
+                .whenPressed(new ParallelCommandGroup(
+                        robot.transfer.setKickPos(Transfer.kickDown),
+                        robot.intake.setIntakeMotorPow(-.5),
+                        robot.transfer.setTransferPowerCommand(-.75)
+                ))
+                .whenReleased(new ParallelCommandGroup(
+                        robot.transfer.setTransferPowerCommand(0),
+                        robot.intake.setIntakeMotorPow(0)
+                ));
 
         // kick 4th ball
         new Trigger(() -> driver1.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.5)
@@ -62,10 +80,8 @@ public class REDMEET1TeleOp extends CommandOpMode {
 
 //        // change speed +- 50
 //        new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP)
-//                .whenPressed(robot.shooter.incrementSpeed(50));
 //
 //        new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN)
-//                .whenPressed(robot.shooter.incrementSpeed(-50));
 
         // flower
         new GamepadButton(driver1, GamepadKeys.Button.CIRCLE)
@@ -94,9 +110,9 @@ public class REDMEET1TeleOp extends CommandOpMode {
 
     @Override
     public void preRun() {
-        Shooter.speed = 1280;
 
-        follower.setPose(PoseStorage.consumeOrDefault(PoseStorage.DEFAULT_RED_TELEOP_POSE, Robot.Alliance.RED));
+        // Re-apply at start in case the localizer (Pinpoint) finished resetting after init.
+        follower.setPose(startPose);
 
         robot.intake.flowerUp().schedule();
     }
@@ -121,7 +137,7 @@ public class REDMEET1TeleOp extends CommandOpMode {
                 robot.goalState.activeGoal
         );
 
-        robot.transfer.setTransferPower(Math.sqrt(driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)));
+        robot.transfer.setTransferPower((driver1.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER)) > 0.2 ? 1 : 0);
 
         follower.update();
 
@@ -129,6 +145,9 @@ public class REDMEET1TeleOp extends CommandOpMode {
         panelsTelemetry.addData("shooter target velocity", Shooter.speed);
         panelsTelemetry.addData("active goal", robot.goalState.activeGoal);
         telemetry.addData("active goal", robot.goalState.activeGoal);
+        telemetry.addData("distance to red goal", Math.hypot(
+                follower.pose().x() - NON_FLOWER_RED_CELL.x(),
+                follower.pose().y() - NON_FLOWER_RED_CELL.y()));
 
         telemetry.update();
         panelsTelemetry.update();

@@ -19,15 +19,13 @@ public class servotuner extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        flower1 = new ServoEx(hardwareMap, "flower1");
-        flower2 = new ServoEx(hardwareMap, "flower2").setInverted(true);
-        flower = new ServoExGroup(flower1, flower2);
+        flower1 = new ServoEx(hardwareMap, "flicker");
 
 
         waitForStart();
 
         while (opModeIsActive()) {
-            flower.set(flowerpos);
+            flower1.set(flowerpos);
         }
     }
 }

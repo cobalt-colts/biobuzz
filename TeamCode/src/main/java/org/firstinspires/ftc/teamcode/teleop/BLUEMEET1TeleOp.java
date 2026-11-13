@@ -4,6 +4,7 @@ import com.bylazar.gamepad.PanelsGamepad;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.button.GamepadButton;
@@ -27,6 +28,7 @@ public class BLUEMEET1TeleOp extends CommandOpMode {
     GamepadEx driver2;
 
     Follower follower;
+    Pose startPose;
 
     @Override
     public void initialize() {
@@ -37,6 +39,11 @@ public class BLUEMEET1TeleOp extends CommandOpMode {
         driver2 = new GamepadEx(gamepad2);
 
         follower = Constants.create(hardwareMap);
+        robot.shooter.configureAim(() -> follower.pose(), robot.goalState);
+
+        // Grab the auto pose during init so the handoff can't expire while waiting for START.
+        startPose = PoseStorage.consumeOrDefault(PoseStorage.DEFAULT_BLUE_TELEOP_POSE, Robot.Alliance.BLUE);
+        follower.setPose(startPose);
 
         //
         // Driver 1 Controls
@@ -62,10 +69,8 @@ public class BLUEMEET1TeleOp extends CommandOpMode {
 
 //        // change speed +- 50
 //        new GamepadButton(driver1, GamepadKeys.Button.DPAD_UP)
-//                .whenPressed(robot.shooter.incrementSpeed(50));
 //
 //        new GamepadButton(driver1, GamepadKeys.Button.DPAD_DOWN)
-//                .whenPressed(robot.shooter.incrementSpeed(-50));
 
         // flower
         new GamepadButton(driver1, GamepadKeys.Button.CIRCLE)
@@ -94,9 +99,9 @@ public class BLUEMEET1TeleOp extends CommandOpMode {
 
     @Override
     public void preRun() {
-        Shooter.speed = 1280;
 
-        follower.setPose(PoseStorage.consumeOrDefault(PoseStorage.DEFAULT_BLUE_TELEOP_POSE, Robot.Alliance.BLUE));
+        // Re-apply at start in case the localizer (Pinpoint) finished resetting after init.
+        follower.setPose(startPose);
 
         robot.intake.flowerUp().schedule();
     }

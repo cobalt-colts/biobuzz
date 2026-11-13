@@ -23,8 +23,8 @@ public class Transfer extends SubsystemBase {
     ServoEx kicker;
     Robot robot;
 
-    public static double kickUp = .5425;
-    public static double kickDown = .735;
+    public static double kickUp = .135;
+    public static double kickDown = .34;
 
 
     public Transfer(HardwareMap hardwareMap, Robot mainRobot) {
@@ -45,15 +45,9 @@ public class Transfer extends SubsystemBase {
 
     public Command kick() {
         return new SequentialCommandGroup(
-                new ConditionalCommand(
-                        new InstantCommand(() -> Shooter.speed = 1250),
-                        new InstantCommand(() -> Shooter.speed = 1260),
-                        () -> robot.opmodetype == Robot.OpModeTypes.AUTO
-                ),
                 new InstantCommand(() -> kicker.set(kickUp)),
-                new WaitCommand(250),
-                new InstantCommand(() -> kicker.set(kickDown)),
-                new InstantCommand(() -> Shooter.speed = 1280)
+                new WaitCommand(500),
+                new InstantCommand(() -> kicker.set(kickDown))
         );
     }
 
@@ -63,7 +57,7 @@ public class Transfer extends SubsystemBase {
 
     public Command runTransferForTime(int time) {
         return new SequentialCommandGroup(
-                setTransferPowerCommand(.6),
+                setTransferPowerCommand(.8),
                 robot.intake.setIntakeMotorPow(1),
                 new WaitCommand(time),
                 robot.intake.setIntakeMotorPow(0),

@@ -45,13 +45,13 @@ public class FLOWERMEET1Auto extends CommandOpMode {
         robot = new Robot(hardwareMap, Robot.OpModeTypes.AUTO, telemetry, Robot.Alliance.RED);
 
         follower = Constants.create(hardwareMap);
+        robot.shooter.configureAim(() -> follower.pose(), robot.goalState);
 
         robot.intake.flowerStore().schedule();
     }
 
     @Override
     public void preRun() {
-        Shooter.speed = 1270;
         follower.localizer.setPose(new Pose(58.5, 133.2, Math.toRadians(-90)));
         robot.intake.flowerUp().schedule();
         autoRoutine().schedule();
@@ -63,6 +63,7 @@ public class FLOWERMEET1Auto extends CommandOpMode {
         super.run();
 
         follower.update();
+        PoseStorage.save(follower.pose(), Robot.Alliance.RED);
 
         telemetry.update();
     }

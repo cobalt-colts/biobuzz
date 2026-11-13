@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.robot.subsystems;
 
+import android.graphics.Path;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.InstantCommand;
@@ -7,6 +9,8 @@ import com.seattlesolvers.solverslib.command.SubsystemBase;
 import com.seattlesolvers.solverslib.hardware.motors.Motor;
 import com.seattlesolvers.solverslib.hardware.servos.ServoEx;
 import com.seattlesolvers.solverslib.hardware.servos.ServoExGroup;
+
+import org.firstinspires.ftc.teamcode.robot.Robot;
 
 public class Intake extends SubsystemBase {
     Motor intake;
@@ -18,13 +22,17 @@ public class Intake extends SubsystemBase {
     public static double flowerDrive = .1;
     public static double flowerDown = .48;
 
-    public Intake(HardwareMap hardwareMap) {
+    public Intake(HardwareMap hardwareMap, Robot.OpModeTypes opmode) {
         intake = new Motor(hardwareMap, "intake");
         intake.setInverted(true);
 
         flower1 = new ServoEx(hardwareMap, "flower1");
         flower2 = new ServoEx(hardwareMap, "flower2").setInverted(true);
         flower = new ServoExGroup(flower1, flower2);
+
+        if (opmode == Robot.OpModeTypes.AUTO) {
+            flower.set(flowerUp);
+        }
 
         intake.set(0);
     }
